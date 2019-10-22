@@ -1,0 +1,38 @@
+---
+title: "Looking at Swarms .stats Output"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(scales)
+library(viridis)
+setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master Biostudium\\Projekt_France")
+```
+```{r}
+input<-"all_forest_soils_18S_V4_904_samples_1f.stats"
+col_names<-c("Unique","Abundance","Center_Amplicon_Name","Seed_Abundance","Singletons","Iterations","Steps")
+```
+```{r}
+input<-"all_forest_soils_18S_V4_904_samples_1f.stats"
+col_names<-c("Unique","Abundance","Center_Amplicon_Name","Seed_Abundance","Singletons","Iterations","Steps")
+
+d<-read_tsv(input,n_max=100000,col_names = col_names) 
+d %>% mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance) -> d
+
+```
+
+
+```{r}
+ggplot(d,
+       aes(x = Abundance,
+           y = Percentage_of_Singletons,
+           color = Ratio_Seed_Abundance_Total_Abundance)) +
+  scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
+  geom_point(size = 0.02) +
+  scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  theme_bw(base_size = 16) +
+  labs(y = "% Singletons")
+```
+
