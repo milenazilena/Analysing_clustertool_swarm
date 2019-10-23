@@ -8,17 +8,19 @@ library(scales)
 library(viridis)
 setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master Biostudium\\Projekt_France")
 ```
+
 ```{r}
 input <- "all_forest_soils_18S_V4_904_samples_1f.stats"
-col_names <- c("Unique","Abundance","Center_Amplicon_Name","Seed_Abundance","Singletons","Iterations","Steps")
+n_lines <- 10000
+col_names <- c("Unique", "Abundance", "Center_Amplicon_Name",
+               "Seed_Abundance", "Singletons", "Iterations", "Steps")
 ```
 ```{r}
-d <- read_tsv(input,n_max=10000,col_names = col_names) 
-d %>% mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
-  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
-  arrange(Abundance) -> d
+read_tsv(input, n_max = n_lines, col_names = col_names) %>%
+    mutate(Percentage_of_Singletons = (Singletons / Abundance) * 100) %>% 
+    mutate(Ratio_Seed_Abundance_Total_Abundance = Seed_Abundance / Abundance) %>%
+    arrange(Abundance) -> d
 ```
-
 
 ```{r}
 ggplot(data = d,
