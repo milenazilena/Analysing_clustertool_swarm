@@ -9,6 +9,8 @@ library(viridis)
 setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master Biostudium\\Projekt_France")
 ```
 
+Data 18S V4
+---------------------
 ```{r}
 input <- "all_forest_soils_18S_V4_904_samples_1f.stats"
 n_lines <- 10000
@@ -52,4 +54,43 @@ ggplot(data = filter(d, Abundance >= 1000),
   labs(y = "% Singletons")
 ```
 
+Data 16S rRNA V3-V4
+---------------------------
+```{r}
+input2 <- "16S_V3_V4_1332_samples_1f_20000.stats"
+```
+```{r}
+read_tsv(input2,col_names = col_names) %>% 
+  mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
+  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
+  arrange(Abundance) -> d2
+```
 
+
+```{r}
+ggplot(d2,
+       aes(x = Abundance,
+           y = Percentage_of_Singletons,
+           color = Ratio_Seed_Abundance_Total_Abundance)) +
+  scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
+  geom_point(size = 0.02) +
+  scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  theme_bw(base_size = 16) +
+  labs(y = "% Singletons")
+```
+
+```{r}
+ggplot(data = filter(d2, Abundance >= 1000),
+       aes(x = Abundance,
+           y = Percentage_of_Singletons,
+           color = Ratio_Seed_Abundance_Total_Abundance)) +
+  scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
+  geom_point(size = 0.02) +
+  scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  theme_bw(base_size = 16) +
+  labs(y = "% Singletons")
+```
