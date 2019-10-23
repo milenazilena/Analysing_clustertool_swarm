@@ -21,7 +21,7 @@ d %>% mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>%
 
 
 ```{r}
-ggplot(d,
+ggplot(data = d,
        aes(x = Abundance,
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
@@ -33,11 +33,11 @@ ggplot(d,
   theme_bw(base_size = 16) +
   labs(y = "% Singletons")
 ```
+
+Focus on the largest clusters:
+
 ```{r}
-d %>% filter(Abundance >= 1000) -> d_1000
-```
-```{r}
-ggplot(d_1000,
+ggplot(data = filter(d, Abundance >= 1000),
        aes(x = Abundance,
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
