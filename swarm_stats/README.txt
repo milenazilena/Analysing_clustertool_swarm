@@ -1,1 +1,2 @@
-R Notebook and plots of swarms .stats output
+Internship 2019 projects of Milena Koenigshofen at CIRAD, Montpellier
+Supervisor: Frédéric Mahé
