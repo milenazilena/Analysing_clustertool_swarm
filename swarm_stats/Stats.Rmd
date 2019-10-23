@@ -30,7 +30,7 @@ ggplot(data = d,
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
   scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
-  geom_point(size = 0.02) +
+  geom_point(size = 0.6) +
   scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
@@ -46,7 +46,7 @@ ggplot(data = filter(d, Abundance >= 1000),
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
   scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
-  geom_point(size = 0.02) +
+  geom_point() +
   scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
@@ -73,7 +73,7 @@ ggplot(d2,
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
   scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
-  geom_point(size = 0.02) +
+  geom_point(size = 0.6) +
   scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
@@ -87,7 +87,7 @@ ggplot(data = filter(d2, Abundance >= 1000),
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
   scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
-  geom_point(size = 0.02) +
+  geom_point() +
   scale_x_log10(name = "Total Abundance of Amplicons\n(Cluster Size)",
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
