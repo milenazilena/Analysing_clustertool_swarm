@@ -35,7 +35,7 @@ ggplot(data = d,
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
   theme_bw(base_size = 16) +
-  labs(y = "% Singletons")
+  labs(y = "% Singletons", title = "Data 18S V4")
 ```
 
 Focus on the largest clusters:
@@ -51,7 +51,7 @@ ggplot(data = filter(d, Abundance >= 1000),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
   theme_bw(base_size = 16) +
-  labs(y = "% Singletons")
+  labs(y = "% Singletons", title = "Data 18S V4")
 ```
 
 Data 16S rRNA V3-V4
@@ -78,9 +78,9 @@ ggplot(d2,
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
   theme_bw(base_size = 16) +
-  labs(y = "% Singletons")
+  labs(y = "% Singletons", title = "Data 16S rRNA V3-V4")
 ```
-
+Focus on the largest clusters:
 ```{r}
 ggplot(data = filter(d2, Abundance >= 1000),
        aes(x = Abundance,
@@ -92,5 +92,5 @@ ggplot(data = filter(d2, Abundance >= 1000),
                 breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
   theme_bw(base_size = 16) +
-  labs(y = "% Singletons")
+  labs(y = "% Singletons", title = "Data 16S rRNA V3-V4")
 ```
