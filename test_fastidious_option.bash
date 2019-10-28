@@ -14,5 +14,5 @@ while read b; do
 		-l /dev/null 2>&1<<< "${FASTA_FILE}"
 done
 done |
-| tac
+tac
 exit 0
