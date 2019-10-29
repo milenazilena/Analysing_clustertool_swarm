@@ -19,9 +19,10 @@ while read b; do
 		echo -ne "file\t${i}\t${b}\t" # shows boundary values as column next to other values
 		/usr/bin/time -f "%e\t%M\t%P" \
 		swarm -f -b "${b}" \
+			"${FASTA_FILE}" \
 			-s ${STATS}_${b}.stats \
 			-o /dev/null \
-			-l /dev/null 2>&1 <<< "${FASTA_FILE}"
+			-l /dev/null 2>&1
 	done 
 done > temp.log
 
