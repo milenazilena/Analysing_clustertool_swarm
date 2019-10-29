@@ -12,7 +12,7 @@ SUBFOLDER="Test_stats"
 mkdir "${SUBFOLDER}"
 STATS="${SUBFOLDER}/statfile_test_b"
 
-awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' <<< $FASTA_FILE | \
+awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' ${FASTA_FILE} | \
 tac | \
 while read b; do 
 	for i in {1..3}; do # repeat it 3 times
