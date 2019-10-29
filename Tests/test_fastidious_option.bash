@@ -3,6 +3,7 @@
 
 #
 FASTA_FILE=$(printf ">s1_1000\nAA\n>s2_100\nCC\n>s3_10\nGG\n>s4_1\nTT\n")
+DIR_STATS=$("Test_stats/statfile_test_b")
 
 awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' <<< $FASTA_FILE | \
 tac | \
@@ -11,7 +12,7 @@ while read b; do
 		echo -ne "${i}\t${b}\t" #shows boundary values as column next to other values
 		/usr/bin/time -f "%e\t%M\t%P" \
 		swarm -f -b "${b}" \
-		-s statfile_test_b_${b}.stats \
+		-s ${DIR_STATS}_${b}.stats \
 		-o /dev/null \
 		-l /dev/null 2>&1<<< "${FASTA_FILE}"
 	done 
