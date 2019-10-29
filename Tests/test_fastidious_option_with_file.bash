@@ -16,7 +16,7 @@ FASTA_FILE="${args[0]}"
 SUBFOLDER="Test_stats"
 mkdir "${SUBFOLDER}"
 STATS="${SUBFOLDER}/statfile_test_b"
-FILE_NAME=$(awk -F'[.]' '{print $2}' ${FASTA_FILE})
+FILE_NAME=$(awk -F'[.]' '{print $2}' ${args[0]})
 echo "${FILE_NAME}"
 
 awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' ${FASTA_FILE} | \
