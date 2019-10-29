@@ -11,12 +11,10 @@ while read b; do
 		echo -ne "${i}\t${b}\t" #shows boundary values as column next to other values
 		/usr/bin/time -f "%e\t%M\t%P" \
 		swarm -f -b "${b}" \
-		-s statfile_test_${b}.stats \
+		-s statfile_test_b_${b}.stats \
 		-o /dev/null \
 		-l /dev/null 2>&1<<< "${FASTA_FILE}"
 	done 
 done > temp.log
 
 exit 0
-
-#stat file for each b value
