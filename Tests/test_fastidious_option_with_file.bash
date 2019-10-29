@@ -5,8 +5,7 @@
 # This script uses a fasta-file-like-variable to measure computation time and memory of swarm 
 # used with different boundary values and creates a .stats file for each boundary value.
 args=("$@")
-echo "${args[0]} "
-FASTA_FILE="${args[1]}"
+FASTA_FILE="${args[0]}"
 
 SUBFOLDER="Test_stats"
 mkdir "${SUBFOLDER}"
