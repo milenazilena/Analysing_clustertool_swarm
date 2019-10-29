@@ -6,7 +6,7 @@
 FASTA_FILE=$(printf ">s1_1000\nAA\n>s2_100\nCC\n>s3_10\nGG\n>s4_1\nTT\n")
 
 mkdir Test_stats
-DIR_STATS=$("Test_stats/statfile_test_b")
+DIR_STATS=$(printf "Test_stats/statfile_test_b")
 
 awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' <<< $FASTA_FILE | \
 tac | \
