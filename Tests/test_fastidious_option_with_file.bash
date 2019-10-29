@@ -5,6 +5,11 @@
 # This script uses a fasta-file-like-variable to measure computation time and memory of swarm 
 # used with different boundary values and creates a .stats file for each boundary value.
 
+#filename in log without .fasta
+# why illegal header line?
+#empty .stats, empty .log
+# why not 999?
+
 args=("$@")
 
 FASTA_FILE="${args[0]}"
@@ -28,8 +33,3 @@ while read b; do
 done > temp.log
 
 exit 0
-
-#filename in log without .fasta
-# why illegal header line?
-#empty .stats, empty .log
-# why not 999?
