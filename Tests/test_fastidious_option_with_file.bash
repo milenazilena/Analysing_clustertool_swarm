@@ -5,19 +5,16 @@
 # This script uses a fasta-file-like-variable to measure computation time and memory of swarm 
 # used with different boundary values and creates a .stats file for each boundary value.
 
-#filename in log without .fasta
+# filename in log without .fasta
 # why illegal header line?
 #empty .stats, empty .log
 # why not 999?
 
-args=("$@")
-
-FASTA_FILE="${args[0]}"
+FASTA_FILE="${1}"
 SUBFOLDER="Test_stats"
 mkdir "${SUBFOLDER}"
 STATS="${SUBFOLDER}/statfile_test_b"
-FILE_NAME=$(awk -F'[.]' '{print $2}' ${args[0]})
-echo "${FILE_NAME}"
+FILE_NAME="${FASTA_FILE/.*/}"
 
 awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' ${FASTA_FILE} | \
 tac | \
@@ -34,3 +31,4 @@ while read b; do
 done > temp.log
 
 exit 0
+
