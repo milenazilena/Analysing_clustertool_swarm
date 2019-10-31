@@ -17,7 +17,8 @@ mkdir -p "${SUBFOLDER}"
 STATS="${SUBFOLDER}/${FILE_NAME}_b"
 
 
-awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' ${FASTA_FILE} | \
+awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 1) {print a}}' ${FASTA_FILE} | \
+uniq | \
 tac | \
 while read b ; do 
 	for i in {1..3} ; do # repeat it 3 times
