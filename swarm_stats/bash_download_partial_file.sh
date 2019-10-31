@@ -1,6 +1,6 @@
 #!/bin/bash
 
-URL="https://elwe.rhrk.uni-kl.de/outgoing/Camargue_16S_roots_and_stems_20190920_1593_samples_1f.stats.gz"
+URL=$1
 LINES=10000
 OUTPUT="${URL/*\//}"
 OUTPUT="${OUTPUT/.gz/}"
