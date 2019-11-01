@@ -1,7 +1,7 @@
 #!/bin/bash
 
 URL=$1
-LINES=10000
+LINES=$2
 OUTPUT="${URL/*\//}"
 OUTPUT="${OUTPUT/.gz/}"
 
