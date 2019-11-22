@@ -1,61 +1,35 @@
 library(tidyverse)
 library(scales)
 library(viridis)
-library(gridExtra)
 
 setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master Biostudium\\Projekt_France")
 
-col_names <- c("Unique","Abundance","Center_Amplicon_Name","Seed_Abundance","Singletons","Iterations","Steps")
+## Plot the relation between cluster size and percentage of singletons for several datasets
+
+## datasets
+## All forest soils 18S V4 904 samples: all over the world
+## 16S rRNA V3-V4: mediterrian soils
+## 18S V9, 496 samples: all over the world
+## Camargue 16S roots and stems: rice fields in Southern France
 
 
-#Data: All forest soils 18S V4 904 samples
-#all over the world
-input <- "all_forest_soils_18S_V4_904_samples_1f.stats"
+col_names <- c("Unique", "Abundance", "Center_Amplicon_Name",
+               "Seed_Abundance", "Singletons", "Iterations", "Steps")
 
-read_tsv(input,n_max=50000,col_names = col_names) %>% 
-  mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
-  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
-  mutate(project = "18S V4") %>% 
-  arrange(Abundance) -> d1
-
-
-#Data 16S rRNA V3-V4
-# mediterrian soils
-input2 <- "16S_V3_V4_1332_samples_1f.stats"
-
-read_tsv(input2,n_max=50000, col_names = col_names) %>% 
-  mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
-  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
-  mutate(project = "16S V3-V4") %>% 
-  arrange(Abundance) -> d2
+load_data <- function(input, project_name){
+  read_tsv(input, n_max = 50000,col_names = col_names) %>% 
+    mutate(Percentage_of_Singletons = 100 * Singletons / Abundance) %>% 
+    mutate(Ratio_Seed_Abundance_Total_Abundance = Seed_Abundance / Abundance)  %>%
+    mutate(project = project_name) %>% 
+    arrange(Abundance)
+}
 
 
-#Data: 18S V9, 496 samples
-#all over the world
-input3 <- "18S_V9_496_samples_1f.stats"
-
-read_tsv(input3,n_max=50000,col_names = col_names) %>% 
-  mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
-  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
-  mutate(project = "18S V9") %>% 
-  arrange(Abundance) -> d3
-
-
-#Data Camargue 16S roots and stems
-#rice fields in france
-input4 <- "Camargue_16S_roots_and_stems_20190920_1593_samples_1f.stats"
-
-read_tsv(input4, n_max=50000, col_names = col_names) %>% 
-  mutate(Percentage_of_Singletons=(Singletons/Abundance)*100) %>% 
-  mutate(Ratio_Seed_Abundance_Total_Abundance=Seed_Abundance/Abundance)  %>%
-  mutate(project = "16S Camargue") %>% 
-  arrange(Abundance) -> d4
-
-
-bind_rows(d1, d2, d3, d4) -> d5
-
-ggplot(d5,
-       aes(x = Abundance,
+bind_rows(load_data("all_forest_soils_18S_V4_904_samples_1f.stats", "18S V4"),
+          load_data("16S_V3_V4_1332_samples_1f.stats", "16S V3-V4"),
+          load_data("18S_V9_496_samples_1f.stats", "18S V9"), 
+          load_data("Camargue_16S_roots_and_stems_20190920_1593_samples_1f.stats", "16S Camargue")) %>%
+ggplot(aes(x = Abundance,
            y = Percentage_of_Singletons,
            color = Ratio_Seed_Abundance_Total_Abundance)) +
   scale_colour_viridis(name = "Seed Abundance\nto total Abundance") +
