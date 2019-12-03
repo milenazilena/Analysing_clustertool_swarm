@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from my_drawbox import draw_box
+from drawbox import draw_box
 
 # - empty str,
 # - str with even number of chars,

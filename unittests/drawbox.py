@@ -14,15 +14,6 @@ import sys
 from argparse import ArgumentParser
 import textwrap
 
-# ************************************************************************** #
-#                                                                            #
-#                                 Variables                                  #
-#                                                                            #
-# ************************************************************************** #
-
-max_width = 76
-filling = "*"
-comment = "#"
 
 # ************************************************************************** #
 #                                                                            #
@@ -55,17 +46,21 @@ def draw_box(text):
     """
     Creates box around text.
     """
+    max_width = 76
+    filling = "*"
+    comment = "#"
+    mybox = list()
     inset = max_width - 2 * len(comment)
     filled = comment + " " + filling * inset + " " + comment
     empty = comment + " " + " " * inset + " " + comment
     line_list = textwrap.wrap(text, width=inset)
-    print(filled, empty, sep="\n", file=sys.stdout)
+    mybox.extend([filled, empty])
     for line in line_list:
         middle = comment + " " + line.center(inset, " ") + " " + comment
-        print(middle, sep="", file=sys.stdout)
-    print(empty, filled, sep="\n", file=sys.stdout)
+        mybox.append(middle)
+    mybox.extend([empty, filled])
 
-    return
+    return mybox
 
 
 def main():
@@ -74,7 +69,8 @@ def main():
     """
 
     text = arg_parse()
-    draw_box(text)
+    mybox = draw_box(text)
+    print("\n".join(mybox), file=sys.stdout)
 
     return
 
@@ -89,5 +85,3 @@ def main():
 if __name__ == '__main__':
 
     main()
-
-sys.exit(0)
