@@ -57,15 +57,16 @@ def find_largest_cluster(stats):
         representative = None
         best_representative = None
 
-        while line <= max_lines:
-            for row in f:
-                row = row.split()
-                amplicon_nr = int(row[0])
-                representative = row[2]
-                if amplicon_nr > highest_amplicon_nr:
-                    highest_amplicon_nr = amplicon_nr
-                    best_representative = representative
-                line += 1
+        for row in f:
+            row = row.split()
+            amplicon_nr = int(row[0])
+            representative = row[2]
+            if amplicon_nr > highest_amplicon_nr:
+                highest_amplicon_nr = amplicon_nr
+                best_representative = representative
+            line += 1
+            if line >= max_lines:
+                break
 
     return best_representative
 
