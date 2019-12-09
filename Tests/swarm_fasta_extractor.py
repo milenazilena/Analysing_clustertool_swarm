@@ -20,25 +20,21 @@ def arg_parse():
 
     parser.add_argument("-s", "--stats",
                         action="store",
-                        nargs="?",
                         dest="stats",
                         required=True)
 
     parser.add_argument("-o", "--swarms",
                         action="store",
-                        nargs="?",
                         dest="swarms",
                         required=True)
 
     parser.add_argument("-f", "--fasta",
                         action="store",
-                        nargs="?",
                         dest="fasta",
                         required=True)
 
     parser.add_argument("-nf", "--newfasta",
                         action="store",
-                        nargs="?",
                         dest="newfasta",
                         required=True)
     args = parser.parse_args()
