@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(scales)
+library(viridis)
+setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master Biostudium\\Projekt_France")
+
+input <- "18S_V4_swarm_timmings.tsv"
+col_names <- c("fasta_file","Iteration","time_in_sec",
+               "Memory_kb","percentage_CPU")
+
+read_tsv(input,col_names = col_names) %>%
+  mutate(Iteration = as.factor(Iteration)) %>%
+  mutate(percentage_CPU = parse_number(percentage_CPU)) -> timings
+```
+```{r}
+timings %>% group_split(fasta_file) -> newtimings
+```
+
+```{r}
+shapiro.test(newtimings[[1]]$time_in_sec)
+shapiro.test(newtimings[[2]]$time_in_sec)
+
+shapiro.test(newtimings[[1]]$Memory_kb)
+shapiro.test(newtimings[[2]]$Memory_kb)
+
+shapiro.test(newtimings[[1]]$percentage_CPU)
+shapiro.test(newtimings[[2]]$percentage_CPU)
+```
+
+```{r}
+t.test(time_in_sec~fasta_file,timings)
+t.test(Memory_kb~fasta_file,timings)
+t.test(percentage_CPU~fasta_file,timings)
+```
+```{r}
+diff <- function(column){
+  subs <- vector()
+  row <- 1
+  for (i in column){
+    if ((row %% 2) != 0){
+      time_many <- 0
+      time_many <- i + time_many
+    }
+    else{
+      time_single <- 0
+      time_single <- i + time_single
+      difference <- 0
+      abs(time_many - time_single) -> difference
+      subs <- c(subs, difference)
+    }
+  row <- row + 1 
+  }
+round_mean <- round(mean(subs), digits = 2)
+round_sd <- round(sd(subs), digits = 2)
+nlist <- list(paste("mean:", round_mean ), paste("sd:", round_sd))
+return (nlist)
+}
+```
+```{r}
+print("Absolut differences:")
+paste("Time -", diff(timings$time_in_sec))
+paste("Memory -", diff(timings$Memory_kb))
+paste("CPU -", diff(timings$percentage_CPU))
+```
+
+```{r}
+diff_percentage <- function(column){
+  subs_percentage <- vector()
+  row <- 1
+  for (i in column){
+    if ((row%% 2) != 0){
+      many <- 0
+      many <- i + many
+    }
+    else{
+        single <- 0
+        single <- i + single
+        difference <- 0
+        if (single > many){
+          100-(many/single*100) -> difference
+          subs_percentage <- c(subs_percentage, difference)
+        }
+        else{
+          100-(single/many*100) -> difference
+          subs_percentage <- c(subs_percentage, difference)
+        }
+    }
+  row <- row + 1
+  }
+round_mean <- round(mean(subs_percentage), digits = 2)
+round_sd <- round(sd(subs_percentage), digits = 2)
+nlist <- list(paste("mean:", round_mean), paste("sd:", round_sd))
+return (nlist)
+}
+```
+```{r}
+print("Differences in percentage:")
+paste("Time -", diff_percentage(timings$time_in_sec), "%")
+paste("Memory -", diff_percentage(timings$Memory_kb), "%")
+paste("CPU -", diff_percentage(timings$percentage_CPU), "%")
+```
+```{r}
+diff_percentage <- function(column){
+  subs_percentage <- vector()
+  row <- 1
+  for (i in column){
+    if ((row%% 2) != 0){
+      many <- 0
+      many <- i + many
+    }
+    else{
+        single <- 0
+        single <- i + single
+        difference <- 0
+          100-(many/single*100) -> difference
+          subs_percentage <- c(subs_percentage, difference)
+    }
+  row <- row + 1
+  }
+round_mean <- round(mean(subs_percentage), digits = 2)
+round_sd <- round(sd(subs_percentage), digits = 2)
+nlist <- list(paste("mean:", round_mean), paste("sd:", round_sd))
+return (nlist)
+}
+```
+```{r}
+print("Differences in percentage:")
+paste("Time -", diff_percentage(timings$time_in_sec), "%")
+paste("Memory -", diff_percentage(timings$Memory_kb), "%")
+paste("CPU -", diff_percentage(timings$percentage_CPU), "%")
+```
+```{r}
+div_mean <- function(column){
+meany <- vector()
+  row <- 1
+  for (i in column){
+    if ((row%% 2) != 0){
+      many <- 0
+      many <- i + many
+    }
+    else{
+        single <- 0
+        single <- i + single
+        difference <- 0
+          1 - many/single -> difference
+          meany <- c(meany, difference)
+    }
+  row <- row + 1
+  }
+round_mean <- round(mean(meany), digits = 3)
+round_sd <- round(sd(meany), digits = 3)
+nlist <- list(paste("mean:", round_mean),  paste("sd:", round_sd))
+return (nlist)
+}
+```
+```{r}
+print("Relative differences")
+paste("Time -", div_mean(timings$time_in_sec))
+paste("Memory -", div_mean(timings$Memory_kb))
+paste("CPU -", div_mean(timings$percentage_CPU))
+```
+```{r}
+timings %>%
+  pivot_wider(id_cols = Iteration,
+              names_from = fasta_file,
+              values_from = c("time_in_sec", "Memory_kb", "percentage_CPU")) %>% 
+  mutate(time_Ratio = 100 - (time_in_sec_18S_V4_many_cluster / time_in_sec_18S_V4_single_cluster) * 100) %>% 
+  mutate(memory_Ratio = 100 - (Memory_kb_18S_V4_many_cluster / Memory_kb_18S_V4_single_cluster) * 100) %>% 
+  mutate(CPU_Ratio = 100 - (percentage_CPU_18S_V4_many_cluster / percentage_CPU_18S_V4_single_cluster) * 100) %>% 
+  summarise(mean_time = mean(time_Ratio), sd_time = sd(time_Ratio),
+            mean_memory = mean(memory_Ratio), sd_memory = sd(memory_Ratio),
+            mean_CPU = mean(CPU_Ratio), sd_CPU = sd(CPU_Ratio))
+
+```
+```{r}
+timings %>%
+  pivot_wider(id_cols = Iteration,
+              names_from = fasta_file,
+              values_from = c("time_in_sec", "Memory_kb", "percentage_CPU")) %>% 
+  mutate(time_Ratio = 100 - (time_in_sec_18S_V4_many_cluster / time_in_sec_18S_V4_single_cluster) * 100) %>% 
+  mutate(memory_Ratio = 100 - (Memory_kb_18S_V4_many_cluster / Memory_kb_18S_V4_single_cluster) * 100) %>% 
+  mutate(CPU_Ratio = 100 - (percentage_CPU_18S_V4_many_cluster / percentage_CPU_18S_V4_single_cluster) * 100) %>% 
+  summarise_at(vars(ends_with("_Ratio")), funs(mean, sd))
+  #summarise_at(c("time_Ratio", "memory_Ratio", "CPU_Ratio"), funs(mean, sd))
+  #summarise_at(vars(time_Ratio:CPU_Ratio), funs(mean, sd))
+```
+
+```{r}
+timings %>%
+  pivot_longer(cols = -c(Iteration, fasta_file),
+               names_to = "Variables", 
+               values_to = "Values") %>% 
+  pivot_wider(id_cols = c(Iteration, Variables),
+              names_from = fasta_file,
+              values_from = Values) %>% 
+  mutate(Ratio = 100 - (`18S_V4_many_cluster` / `18S_V4_single_cluster`) * 100) %>% 
+  group_by(Variables) %>% 
+  summarise(mean = mean(Ratio), sd = sd(Ratio))
+```
+
