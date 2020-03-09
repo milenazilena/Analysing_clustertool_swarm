@@ -1,2 +1,1 @@
-Internship 2019 projects of Milena Koenigshofen at CIRAD, Montpellier
-Supervisor: Frédéric Mahé
+Old folder that shows code for plots and other stuff. These codes are included and described now in the different projects in the "Project notebooks".
