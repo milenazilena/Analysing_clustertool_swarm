@@ -1,0 +1,309 @@
+---
+title: "Project 1: Swarm testing many clusters vs. single cluster"
+output: html_notebook
+---
+To see if data structure has an influence on swarms computation parameters, we want to compare two data sets from 18S V4 data. For the first, we extract the largest cluster as a single cluster by the swarm_fasta_extractor.py script, where Amplicons shorter or longer than the cluster seed are discarded:
+```{r}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os
+import sys
+from argparse import ArgumentParser
+
+def arg_parse():
+    """
+    Parse arguments from command line.
+    """
+
+    parser = ArgumentParser()
+
+    parser.add_argument("-s", "--stats",
+                        action="store",
+                        dest="stats",
+                        required=True)
+
+    parser.add_argument("-o", "--swarms",
+                        action="store",
+                        dest="swarms",
+                        required=True)
+
+    parser.add_argument("-f", "--fasta",
+                        action="store",
+                        dest="fasta",
+                        required=True)
+
+    parser.add_argument("-nf", "--newfasta",
+                        action="store",
+                        dest="newfasta",
+                        required=True)
+    args = parser.parse_args()
+
+    return args.stats, args.swarms, args.fasta, args.newfasta
+
+
+def find_largest_cluster(stats):
+    """Extracts largest cluster from .stats file"""
+    # open file
+    # store the representative if the number of amplicons (first col)
+    # is larger than the one before
+    # only first 1000 lines
+    # return the representative name
+    with open(os.path.join(sys.path[0], stats), "r") as f:
+        line = 0
+        max_lines = 1000
+        amplicon_nr = 0
+        highest_amplicon_nr = 0
+        representative = None
+        best_representative = None
+
+        for row in f:
+            row = row.split()
+            amplicon_nr = int(row[0])
+            representative = row[2]
+            if amplicon_nr > highest_amplicon_nr:
+                highest_amplicon_nr = amplicon_nr
+                best_representative = representative
+            line += 1
+            if line >= max_lines:
+                break
+
+    return best_representative
+
+
+def find_rep_in_swarms(best_representative, swarms):
+    """Finds representive amplicon in .swarms file and
+       returns set of all amplicons in that cluster"""
+    # open swarms
+    # read line by line and compare first element with representative
+    # if it is the same, return set of the amplicons
+    with open(os.path.join(sys.path[0], swarms), "r") as f:
+        amplicons = None
+        for row in f:
+            amplicons = row.strip().split(" ")
+            if best_representative in amplicons[0]:
+                top_amplicon = amplicons[0]
+                amplicons = set(amplicons)
+                return amplicons, top_amplicon
+                break
+
+
+def find_amplicons_in_fasta(amplicons, top_amplicon, fasta):
+    """Finds amplicons in fasta file and creates
+       new fasta file of matching amplicon names"""
+    # open fasta
+    # read line by line and compare ampliconnames with names
+    # then store matching name and following line in fasta file
+    # if sequence length shorter or larger than
+    # representative length, then discard
+    with open(os.path.join(sys.path[0], fasta), "r") as oldf:
+        matches = dict()
+        header = ''
+        for row in oldf:
+            if row.startswith(">"):
+                header = row.strip()[1:]
+            else:
+                if header in amplicons:
+                    matches[header] = (row.strip(), len(row.strip()))
+
+        seq_length = matches[top_amplicon][1]
+        headers = list(matches.keys())
+
+        for header in headers:
+            if matches[header][1] != seq_length:
+                del matches[header]
+
+    return matches
+
+
+def write_new_fasta_file(matches, newfasta):
+    with open(os.path.join(sys.path[0],
+              newfasta), "w+") as newf:
+        for header in matches:
+            print(">", header, "\n", matches[header][0], sep="", file=newf)
+    return
+    # return matches
+
+
+def main():
+    stats, swarms, fasta, newfasta = arg_parse()
+    best_representative = find_largest_cluster(stats)
+    amplicons, top_amplicon = find_rep_in_swarms(best_representative, swarms)
+    matches = find_amplicons_in_fasta(amplicons, top_amplicon, fasta)
+    write_new_fasta_file(matches, newfasta)
+    return
+
+
+if __name__ == '__main__':
+
+    main()
+
+```
+
+We use it as this in bash:
+
+FASTA="neotropical_soils_18S_V4_175_samples.fas"
+
+python3 \
+        swarm_fasta_extractor.py \
+        --stats ${FASTA/.fas/_1.stats} \
+        --swarms ${FASTA/.fas/_1.swarms} \
+        --fasta ${FASTA}   \
+        --newfasta tmp.fasFASTA="neotropical_soils_18S_V4_175_samples.fas"
+
+
+Then we "purify" that single cluster by removing amplicons grafted by the fastidious option (run swarm, extract again):
+
+FASTA="tmp.fas"
+
+swarm \
+        -d 1 -z \
+        -s ${FASTA/.fas/_1.stats} \
+        -w ${FASTA/.fas/_1_representatives.fas} \
+        -o ${FASTA/.fas/_1.swarms} \
+        ${FASTA}
+
+python3 \
+        swarm_fasta_extractor.py \
+        --stats ${FASTA/.fas/_1.stats} \
+        --swarms ${FASTA/.fas/_1.swarms} \
+        --fasta ${FASTA}   \
+        --newfasta 18S_V4_single_cluster.fas   # 644,562 unique amplicons
+
+Then we extract from the full dataset a number of singletons identical or close to the number of amplicons in the single-cluster (singletons must all have the same length than the single-cluster seed, the goal is to exclude variability due to amplicon length):
+
+
+SINGLE_CLUSTER="18S_V4_single_cluster.fas"
+INPUT_FASTA="neotropical_soils_18S_V4_175_samples_1_representatives.fas"
+OUTPUT_FASTA="18S_V4_many_cluster.fas"
+SINGLETONS=$(grep "^>" -c "${SINGLE_CLUSTER}")
+LENGTH=$(head -n 2 "${SINGLE_CLUSTER}" | tail -n +2 | awk '{print 
+length($1)}')
+
+After that we do not have  enough singletons of length LENGTH, so we use vsearch to produce reverse-complement sequences to fill in the gap
+
+(cat "${INPUT_FASTA}"
+   vsearch \
+         --fastx_revcomp "${INPUT_FASTA}" \
+         --fasta_width 0 \
+         --relabel_sha1 \
+         --quiet \
+         --fastaout - | \
+         sed '/^>/ s/$/;size=1;/') | \
+        paste - - | \
+        awk -v LENGTH=${LENGTH} 'length($2) == LENGTH' | \
+        head -n "${SINGLETONS}" | \
+        tr "\t" "\n" >  "${OUTPUT_FASTA}"
+
+By using this code:
+
+FASTA="18S_V4_many_cluster.fas"
+
+for i in {1..1000} ; do
+        printf "%s\t%d\t" "${FASTA}" ${i}
+        /usr/bin/time -f "%e\t%M\t%P" \
+                             swarm -t 4 -z "${FASTA}" -o /dev/null -l /dev/null 2>&1
+done >  "${FASTA/.fas/_timings.tsv}"
+
+
+We create a "18S_V4_swarm_timings.tsv"-table looking like this:
+fasta file             Iteration  Time(sec) Memory(kb)   CPU(%)
+18S_V4_many_cluster	   1	        5.40	    214136	     307%
+18S_V4_single_cluster	 1	        6.19	    182272	     318%
+18S_V4_many_cluster	   2	        5.44    	214156	     305%
+18S_V4_single_cluster	 2	        6.12	    182144	     321%
+18S_V4_many_cluster	   3	        5.51	    214264	     304%
+18S_V4_single_cluster	 3	        5.88	    182076	     323%
+18S_V4_many_cluster	   4	        5.38	    214160	     307%
+18S_V4_single_cluster	 4       	  6.00	    182172	     324%
+18S_V4_many_cluster	   5       	  5.61	    214304	     301%
+18S_V4_single_cluster	 5       	  6.10	    182076	     326%
+
+To visualize this data, we wrote this R-code:
+```{r}
+library(tidyverse)
+library(scales)
+library(viridis)
+setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master_Biostudium\\Projekt_France")
+
+input <- "18S_V4_swarm_timings.tsv"
+col_names <- c("fasta_file","Iteration","time_in_sec",
+               "Memory_kb","percentage_CPU")
+
+read_tsv(input,col_names = col_names) %>%
+  mutate(Iteration = as.factor(Iteration)) %>%
+  mutate(CPU = parse_number(percentage_CPU)) %>%
+  gather("variables", "values", c(time_in_sec, Memory_kb, CPU)) %>%
+  mutate(values = as.numeric(values)) %>%
+  mutate(variables = str_replace(variables, "Memory_kb", "Memory (kb)")) %>%
+  mutate(variables = str_replace(variables, "CPU", "CPU (%)")) %>%
+  mutate(variables = str_replace(variables, "time_in_sec", "Time (s)")) -> d
+
+ggplot(d,
+       aes(x = fasta_file,
+           y = values,
+           fill = fasta_file)) +
+  geom_boxplot() +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "none") +
+  labs(title = "18S V4", x = "Fasta file", y = "Values") + 
+  scale_x_discrete(labels = c("Many clusters", "Single cluster")) +
+  scale_fill_manual(values = c("coral", "coral3")) +
+  facet_wrap(~ variables, scales = "free")
+
+
+#ggsave("diff_clusters_facets.pdf", width = 16, height = 9)
+```
+
+To analyse the outcome, we do some statistics in R
+
+```{r}
+library(tidyverse)
+library(scales)
+library(viridis)
+setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master_Biostudium\\Projekt_France")
+
+input <- "18S_V4_swarm_timings.tsv"
+col_names <- c("fasta_file","Iteration","time_in_sec",
+               "Memory_kb","percentage_CPU")
+
+read_tsv(input,col_names = col_names) %>%
+  mutate(Iteration = as.factor(Iteration)) %>%
+  mutate(percentage_CPU = parse_number(percentage_CPU)) -> timings
+```
+```{r}
+timings %>% group_split(fasta_file) -> newtimings
+```
+Test whether data is normally distributed
+```{r}
+shapiro.test(newtimings[[1]]$time_in_sec)
+shapiro.test(newtimings[[2]]$time_in_sec)
+
+shapiro.test(newtimings[[1]]$Memory_kb)
+shapiro.test(newtimings[[2]]$Memory_kb)
+
+shapiro.test(newtimings[[1]]$percentage_CPU)
+shapiro.test(newtimings[[2]]$percentage_CPU)
+```
+Data is not normally distributed (p-Value shpows significance), means we cannot use t-test but the u-test for unbound probes to test whether the parameters of the single and many clusters are significantly different.
+
+```{r}
+wilcox.test(time_in_sec~fasta_file,timings)
+wilcox.test(Memory_kb~fasta_file,timings)
+wilcox.test(percentage_CPU~fasta_file,timings)
+```
+Tests shows they are significantly different (significance level= 0.05).
+
+```{r}
+timings %>%
+  pivot_longer(cols = -c(Iteration, fasta_file),
+               names_to = "Variables", 
+               values_to = "Values") %>% 
+  pivot_wider(id_cols = c(Iteration, Variables),
+              names_from = fasta_file,
+              values_from = Values) %>% 
+  mutate(Ratio = 100 - (`18S_V4_many_cluster` / `18S_V4_single_cluster`) * 100) %>% 
+  group_by(Variables) %>% 
+  summarise(`mean (%)` = round(mean(Ratio), digits = 2), `sd (%)` = round(sd(Ratio), digits = 2)) -> var2
+var2
+```
+This code shows the differences of the means and standard deviations of the parameters in percent.

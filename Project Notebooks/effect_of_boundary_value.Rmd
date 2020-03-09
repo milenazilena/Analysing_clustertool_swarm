@@ -1,0 +1,172 @@
+---
+title: "Project 3: Effect of swarms' boundary value on computation"
+output: html_notebook
+---
+Here we observe the effects of swarms' boundary value on computation.
+
+
+you are right, it seems I forgot to document that step. The tmp.log file 
+was not properly formatted, stats were split on two lines for each 
+condition:
+
+results of "${FILE_NAME}\t${i}\t${b}\t"      # first line
+results of /usr/bin/time swarm ...             # second line
+
+To fix that, I ran:
+
+paste - - < tmp.log >  TARA_V9_264_samples.log
+
+```{r}
+#!/bin/bash
+
+# v0.1.0
+# 29.10.2019
+# This script uses a fasta-file to measure computation time and memory of swarm 
+# used with different boundary values and creates a .stats file for each boundary value.
+
+
+
+FASTA_FILE="${1}"
+SUBFOLDER="Test_stats"
+FILE_NAME="${FASTA_FILE/.*/}"
+mkdir -p "${SUBFOLDER}"
+STATS="${SUBFOLDER}/${FILE_NAME}_b"
+
+
+awk -F "_" '/^>/ {a=$2 - 1 ; if (a > 0) {print a}}' ${FASTA_FILE} | \
+tac | \
+while read b ; do 
+	for i in {1..3} ; do # repeat it 3 times
+		echo -ne "${FILE_NAME}\t${i}\t${b}\t" # shows boundary values as column next to other values
+		/usr/bin/time -f "%e\t%M\t%P" \
+		swarm -f -b "${b}" \
+			"${FASTA_FILE}" \
+			-s ${STATS}_${b}.stats \
+			-o /dev/null \
+			-l /dev/null 2>&1
+	done 
+paste - - < tmp.log >  TARA_V9_264_samples.log
+
+exit 0
+```
+
+We create a .log-table looking like this for each sample:
+Sample                                          Iteration boundary-value Time(s) Memory(GB) CPU(%) Number_of_Clusters
+neotropical_soils_18S_V4_175_samples_21_percent	1	        1	             23.64	 1046560	  643%	 1109687
+neotropical_soils_18S_V4_175_samples_21_percent	2	        1	             22.05	 1046520	  657%	 1109687
+neotropical_soils_18S_V4_175_samples_21_percent	3	        1	             22.43	 1046516	  655%	 1109687
+neotropical_soils_18S_V4_175_samples_21_percent	1	        2	             149.19	 6435656	  1318%	 541076
+neotropical_soils_18S_V4_175_samples_21_percent	2	        2	             134.20	 6435820	  1353%	 541076
+neotropical_soils_18S_V4_175_samples_21_percent	3	        2	             135.74  6435744	  1374%	 541076
+
+Then we use these files to create a plot that shows the different computation values changing while increasing the boundary value:
+```{r}
+library(tidyverse)
+library(scales)
+
+setwd("C:\\Users\\Milena K\\OneDrive\\Documents\\Master_Biostudium\\Projekt_France")
+
+input_18SV9 <- "TARA_V9_264_samples.log"
+input_18SV4 <- "neotropical_soils_18S_V4_175_samples_21_percent.log"
+output <- "18S_V4_and_V9_fastidious_computation_parameters.pdf"
+col_names <- c("Sample", "Iteration", "boundary_value", "Time (s)",
+               "Memory (GB)", "CPU", "Number of Clusters (in thousands)")
+
+## synopsys:
+## - merge V4 and V9 datasets,
+## - average iteration (group by boundary value),
+## - remove legend,
+## - convert memory into gigabytes,
+## - convert number of clusters into kilos,
+## - compute mean per iteration,
+## - remove y-axis label,
+## - use comma for the y-axis,
+## - give different alpha-values
+
+bind_rows(read_tsv(input_18SV4, col_names = col_names) %>%
+            mutate(marker = "18S V4"),
+          read_tsv(input_18SV9, col_names = col_names) %>%
+            mutate(marker = "18S V9")) %>%
+  mutate(`CPU (%)` = parse_number(CPU)) %>%
+  select (-CPU) %>%
+  gather("variables", "values", c(`Time (s)`, `Memory (GB)`,
+                                  `CPU (%)`, `Number of Clusters (in thousands)`)) %>%
+  mutate(values = case_when (variables == "Memory (GB)" ~ values / 2^20,
+                             variables == "Number of Clusters (in thousands)" ~ values / 1000,
+                             TRUE ~ values)) %>%
+  group_by(marker, boundary_value, variables) %>%
+  mutate(values = mean(values)) %>%
+  ungroup() %>%
+  select(-Iteration) %>%
+  unique() ->  d
+
+ggplot(data = d, aes(x = boundary_value, y = values, colour = marker, alpha = marker)) +
+  geom_point(size = 1.0) +
+  expand_limits(y = 0) +
+  theme_bw(base_size = 16) +
+  scale_alpha_manual(values = c(0.8, 0.08)) +
+  scale_x_log10(name = "boundary value (log)",
+                breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_continuous(labels = comma) +
+  labs(x = "boundary value") +
+  theme(axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        legend.justification = c(1, 0),
+        legend.position = c(0.95, 0.05)) +
+  facet_wrap(~ variables, scales = "free")
+
+ggsave(output, width = 16, height = 9)
+```
+
+On the x-axis we see the boundary value on a log scale. On the y-axis, CPU in percent, the Memory in GB, the number of clusters in thousands and the time in seconds of 18S V4 data (in pink) and 18S V9 data (in blue) is plotted. 18S V4 data is about 30 kb, 18S V9 data 1,419 kb.
+The V4 sequences are 380 nucleotide long on average, and V9 sequences are 130 nucleotide long on average. The V4 dataset was subsampled to the same size (99%) in bytes than the V9 dataset.
+
+```{r}
+log_18SV9 <- read_tsv("TARA_V9_264_samples.log", col_names = col_names)
+log_18SV4 <- read_tsv("neotropical_soils_18S_V4_175_samples_21_percent.log", col_names = col_names)
+```
+```{r}
+maxvalues_V4 <- rbind(log_18SV4[which.max(log_18SV4$`Time (s)`), ],
+log_18SV4[which.max(log_18SV4$`Memory (GB)`), ],
+log_18SV4[which.max(parse_number(log_18SV4$CPU)), ],
+log_18SV4[which.max(log_18SV4$`Number of Clusters (in thousands)`), ],
+log_18SV4[which.max(log_18SV4$boundary_value), ])
+
+maxvalues_V4$Column_max <- c("Time", "Memory", "CPU", "Number of Clusters", "Boundary Value") 
+maxvalues_V4$Sample <- NULL
+maxvalues_V4 <- maxvalues_V4[,c(7,1,3,2,4,5,6)]
+maxvalues_V4
+```
+
+
+```{r} 
+maxvalues_V9 <- rbind(log_18SV9[which.max(log_18SV9$`Time (s)`), ],
+log_18SV9[which.max(log_18SV9$`Memory (GB)`), ],
+log_18SV9[which.max(parse_number(log_18SV9$CPU)), ],
+log_18SV9[which.max(log_18SV9$`Number of Clusters (in thousands)`), ],
+log_18SV9[which.max(log_18SV9$boundary_value), ])
+
+maxvalues_V9$Column_max <- c("Time", "Memory", "CPU", "Number of Clusters", "Boundary Value") 
+maxvalues_V9$Sample <- NULL
+maxvalues_V9 <- maxvalues_V9[,c(7,1,3,2,4,5,6)]
+maxvalues_V9
+```
+
+```{r}
+shapiro.test(log_18SV4$`Time (s)`)
+shapiro.test(log_18SV4$boundary_value)
+shapiro.test(log_18SV4$`Memory (GB)`)
+shapiro.test(parse_number(log_18SV4$CPU))
+shapiro.test(log_18SV4$`Number of Clusters (in thousands)`)
+```
+The Shapiro-WIlk normality test tells us that the variables are not normally distributed.
+This is why we have to use the Mann-Whitney-Wilcoxon Test for independent data that doesn't follow the normal distribution.
+```{r}
+wilcox.test(log_18SV4$`Time (s)`~ log_18SV9$`Time (s)`)
+wilcox.test(log_18SV4$boundary_value~ log_18SV9$boundary_value)
+wilcox.test(log_18SV4$`Memory (GB)`~ log_18SV9$`Memory (GB)`)
+wilcox.test(parse_number(log_18SV4$CPU)~ parse_number(log_18SV9$CPU))
+wilcox.test(log_18SV4$`Number of Clusters (in thousands)`~ log_18SV9$`Number of Clusters (in thousands)`)
+```
+Because the shapiro test tells us that our variables are not normally distributed, we normally would compare the values by the Mann-Whitney-Wilcoxon Test now. But we cannot compare them because they have different numbers of observations (18SV4 = 366, 18SV9 = 25371).
