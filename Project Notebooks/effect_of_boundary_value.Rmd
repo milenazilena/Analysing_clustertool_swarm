@@ -5,18 +5,7 @@ output: html_notebook
 Here we observe the effects of swarms' boundary value on computation.
 
 
-you are right, it seems I forgot to document that step. The tmp.log file 
-was not properly formatted, stats were split on two lines for each 
-condition:
-
-results of "${FILE_NAME}\t${i}\t${b}\t"      # first line
-results of /usr/bin/time swarm ...             # second line
-
-To fix that, I ran:
-
-paste - - < tmp.log >  TARA_V9_264_samples.log
-
-```{r}
+```{sh}
 #!/bin/bash
 
 # v0.1.0
@@ -50,7 +39,8 @@ paste - - < tmp.log >  TARA_V9_264_samples.log
 exit 0
 ```
 
-We create a .log-table looking like this for each sample:
+##We create a .log-table looking like this for each sample:
+
 Sample                                          Iteration boundary-value Time(s) Memory(GB) CPU(%) Number_of_Clusters
 neotropical_soils_18S_V4_175_samples_21_percent	1	        1	             23.64	 1046560	  643%	 1109687
 neotropical_soils_18S_V4_175_samples_21_percent	2	        1	             22.05	 1046520	  657%	 1109687
@@ -59,7 +49,7 @@ neotropical_soils_18S_V4_175_samples_21_percent	1	        2	             149.19	
 neotropical_soils_18S_V4_175_samples_21_percent	2	        2	             134.20	 6435820	  1353%	 541076
 neotropical_soils_18S_V4_175_samples_21_percent	3	        2	             135.74  6435744	  1374%	 541076
 
-Then we use these files to create a plot that shows the different computation values changing while increasing the boundary value:
+##Then we use these files to create a plot that shows the different computation values changing while increasing the boundary value:
 ```{r}
 library(tidyverse)
 library(scales)
@@ -116,42 +106,118 @@ ggplot(data = d, aes(x = boundary_value, y = values, colour = marker, alpha = ma
         legend.position = c(0.95, 0.05)) +
   facet_wrap(~ variables, scales = "free")
 
-ggsave(output, width = 16, height = 9)
+#ggsave(output, width = 16, height = 9)
 ```
 
 On the x-axis we see the boundary value on a log scale. On the y-axis, CPU in percent, the Memory in GB, the number of clusters in thousands and the time in seconds of 18S V4 data (in pink) and 18S V9 data (in blue) is plotted. 18S V4 data is about 30 kb, 18S V9 data 1,419 kb.
 The V4 sequences are 380 nucleotide long on average, and V9 sequences are 130 nucleotide long on average. The V4 dataset was subsampled to the same size (99%) in bytes than the V9 dataset.
 
+In general you can see that the lowest time, memory and CPU values and the highest number of cluster value are bound with the lowest boundary value (1 = no fastidious option) in both datasets, whereas only the max memory value is bound to the max boundary value (724731 V4; 15638315 V9) in both datasets. The highest peaks in time and CPU and the lowest number of clusters are not bound with the max boundary value, but rather rise to a certain level and then fall again. 
+Also interesting could be the values where the boundary value (bv) is equal 2: in comparison to bv == 1, bv == 2 needs at least three times longer, the CPU is doubled, there is at least three times more memory needed and the number of clusters are cut down to a half.
+The max time is 154.27 on 3866 boundary value (V4) and 158.39 on 89624 boundary value (V9). The max CPU is 1381% on 1252 boundary value (V4) and 1281% on 13031 boundary value (V9). The min Number of Clusters is 533961 on 3 boundary value (V4) and 906547 on 11 boundary value (V9). 
+
+
 ```{r}
 log_18SV9 <- read_tsv("TARA_V9_264_samples.log", col_names = col_names)
 log_18SV4 <- read_tsv("neotropical_soils_18S_V4_175_samples_21_percent.log", col_names = col_names)
 ```
+
+##Find the means of the three Iterations:
 ```{r}
-maxvalues_V4 <- rbind(log_18SV4[which.max(log_18SV4$`Time (s)`), ],
-log_18SV4[which.max(log_18SV4$`Memory (GB)`), ],
-log_18SV4[which.max(parse_number(log_18SV4$CPU)), ],
-log_18SV4[which.max(log_18SV4$`Number of Clusters (in thousands)`), ],
-log_18SV4[which.max(log_18SV4$boundary_value), ])
+colnames <- c("boundary_value", "time", "memory", "CPU", "number_clusters")
+log_18SV9_mean <- as.data.frame(cbind(colMeans(matrix(log_18SV9$boundary_value, nrow=3)),
+                                    colMeans(matrix(log_18SV9$`Time (s)`, nrow=3)),
+                                    colMeans(matrix(log_18SV9$`Memory (GB)`, nrow=3)),
+                                    colMeans(matrix(parse_number(log_18SV9$CPU), nrow=3)),
+                                    colMeans(matrix(log_18SV9$`Number of Clusters (in thousands)`, nrow=3))))
+colnames(log_18SV9_mean) <- colnames     
 
-maxvalues_V4$Column_max <- c("Time", "Memory", "CPU", "Number of Clusters", "Boundary Value") 
-maxvalues_V4$Sample <- NULL
-maxvalues_V4 <- maxvalues_V4[,c(7,1,3,2,4,5,6)]
-maxvalues_V4
+log_18SV4_mean <- as.data.frame(cbind(colMeans(matrix(log_18SV4$boundary_value, nrow=3)),
+                                    colMeans(matrix(log_18SV4$`Time (s)`, nrow=3)),
+                                    colMeans(matrix(log_18SV4$`Memory (GB)`, nrow=3)),
+                                    colMeans(matrix(parse_number(log_18SV4$CPU), nrow=3)),
+                                    colMeans(matrix(log_18SV4$`Number of Clusters (in thousands)`, nrow=3))))
+colnames(log_18SV4_mean) <- colnames
+```
+
+Find max and mins from the mean of the iterations:
+```{r}
+values_mean <- as.data.frame(rbind(log_18SV4_mean[which.max(log_18SV4_mean[,2]), ],
+                                   log_18SV4_mean[which.max(log_18SV4_mean[,3]), ],
+                                   log_18SV4_mean[which.max(log_18SV4_mean[,4]), ],
+                                   log_18SV4_mean[which.max(log_18SV4_mean[,5]), ],
+                                   log_18SV4_mean[which.max(log_18SV4_mean[,1]), ],
+                                   log_18SV4_mean[which.min(log_18SV4_mean[,2]), ],
+                                   log_18SV4_mean[which.min(log_18SV4_mean[,3]), ],
+                                   log_18SV4_mean[which.min(log_18SV4_mean[,4]), ],
+                                   log_18SV4_mean[which.min(log_18SV4_mean[,5]), ],
+                                   log_18SV4_mean[which.min(log_18SV4_mean[,1]), ],
+                                   log_18SV9_mean[which.max(log_18SV9_mean[,2]), ],
+                                   log_18SV9_mean[which.max(log_18SV9_mean[,3]), ],
+                                   log_18SV9_mean[which.max(log_18SV9_mean[,4]), ],
+                                   log_18SV9_mean[which.max(log_18SV9_mean[,5]), ],
+                                   log_18SV9_mean[which.max(log_18SV9_mean[,1]), ],
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,2]), ],
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,3]), ],
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,4]), ],
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,5]), ],
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,1]), ])
+
+values_mean$column <- c("Time_max", "Memory_max", "CPU_max", "Number of Clusters_max", 
+                        "Boundary Value_max", "Time_min", "Memory_min", "CPU_min", 
+                        "Number of Clusters_min", "Boundary Value_min")
+
+values_mean$samples <- c(rep("18S_V4", 10), rep("18S_V9", 10))
+```
+
+Find the values of the boundary value 2 concerning the mean of the iterations
+```{r}
+
+boundary_value_2_mean <- rbind(log_18SV4_mean[which.min(log_18SV4_mean$boundary_value), ],
+                               log_18SV9_mean[which.min(log_18SV9_mean$boundary_value), ], 
+                               log_18SV4_mean[which(log_18SV4_mean$boundary_value == 2), ],
+                               log_18SV9_mean[which(log_18SV9_mean$boundary_value == 2), ])
+
+boundary_value_2_mean$Sample <- c("18S_V4", "18S_V9", "18S_V4", "18S_V9")
 ```
 
 
-```{r} 
-maxvalues_V9 <- rbind(log_18SV9[which.max(log_18SV9$`Time (s)`), ],
-log_18SV9[which.max(log_18SV9$`Memory (GB)`), ],
-log_18SV9[which.max(parse_number(log_18SV9$CPU)), ],
-log_18SV9[which.max(log_18SV9$`Number of Clusters (in thousands)`), ],
-log_18SV9[which.max(log_18SV9$boundary_value), ])
 
-maxvalues_V9$Column_max <- c("Time", "Memory", "CPU", "Number of Clusters", "Boundary Value") 
-maxvalues_V9$Sample <- NULL
-maxvalues_V9 <- maxvalues_V9[,c(7,1,3,2,4,5,6)]
-maxvalues_V9
+(Find max and mins of all iterations
+```{r}
+values <- rbind(log_18SV4[which.max(log_18SV4$`Time (s)`), ],
+                log_18SV4[which.max(log_18SV4$`Memory (GB)`), ],
+                log_18SV4[which.max(parse_number(log_18SV4$CPU)), ],
+                log_18SV4[which.max(log_18SV4$`Number of Clusters (in thousands)`), ],
+                log_18SV4[which.max(log_18SV4$boundary_value), ],
+                log_18SV4[which.min(log_18SV4$`Time (s)`), ],
+                log_18SV4[which.min(log_18SV4$`Memory (GB)`), ],
+                log_18SV4[which.min(parse_number(log_18SV4$CPU)), ],
+                log_18SV4[which.min(log_18SV4$`Number of Clusters (in thousands)`), ],
+                log_18SV4[which.min(log_18SV4$boundary_value), ],
+                log_18SV9[which.max(log_18SV9$`Time (s)`), ],
+                log_18SV9[which.max(log_18SV9$`Memory (GB)`), ],
+                log_18SV9[which.max(parse_number(log_18SV9$CPU)), ],
+                log_18SV9[which.max(log_18SV9$`Number of Clusters (in thousands)`), ],
+                log_18SV9[which.max(log_18SV9$boundary_value), ],
+                log_18SV9[which.min(log_18SV9$`Time (s)`), ],
+                log_18SV9[which.min(log_18SV9$`Memory (GB)`), ],
+                log_18SV9[which.min(parse_number(log_18SV9$CPU)), ],
+                log_18SV9[which.min(log_18SV9$`Number of Clusters (in thousands)`), ],
+                log_18SV9[which.min(log_18SV9$boundary_value), ])
+
+values$Column <- c("Time_max", "Memory_max", "CPU_max", "Number of Clusters_max", 
+                   "Boundary Value_max", "Time_min", "Memory_min", "CPU_min", 
+                   "Number of Clusters_min", "Boundary Value_min")
+values <- values[,c(1,8,2,4,3,5,6,7)]
 ```
+)
+
+
+
+
+
+
 
 ```{r}
 shapiro.test(log_18SV4$`Time (s)`)
@@ -160,7 +226,7 @@ shapiro.test(log_18SV4$`Memory (GB)`)
 shapiro.test(parse_number(log_18SV4$CPU))
 shapiro.test(log_18SV4$`Number of Clusters (in thousands)`)
 ```
-The Shapiro-WIlk normality test tells us that the variables are not normally distributed.
+The Shapiro-Wilk normality test tells us that the variables are not normally distributed.
 This is why we have to use the Mann-Whitney-Wilcoxon Test for independent data that doesn't follow the normal distribution.
 ```{r}
 wilcox.test(log_18SV4$`Time (s)`~ log_18SV9$`Time (s)`)

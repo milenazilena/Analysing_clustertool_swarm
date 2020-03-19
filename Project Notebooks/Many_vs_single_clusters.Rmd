@@ -2,8 +2,9 @@
 title: "Project 1: Swarm testing many clusters vs. single cluster"
 output: html_notebook
 ---
+
 To see if data structure has an influence on swarms computation parameters, we want to compare two data sets from 18S V4 data. For the first, we extract the largest cluster as a single cluster by the swarm_fasta_extractor.py script, where Amplicons shorter or longer than the cluster seed are discarded:
-```{r}
+```{python}
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
@@ -139,8 +140,9 @@ if __name__ == '__main__':
 
 ```
 
-We use it as this in bash:
 
+We use it as this in bash:
+```{sh}
 FASTA="neotropical_soils_18S_V4_175_samples.fas"
 
 python3 \
@@ -150,9 +152,10 @@ python3 \
         --fasta ${FASTA}   \
         --newfasta tmp.fasFASTA="neotropical_soils_18S_V4_175_samples.fas"
 
+```
 
 Then we "purify" that single cluster by removing amplicons grafted by the fastidious option (run swarm, extract again):
-
+```{sh}
 FASTA="tmp.fas"
 
 swarm \
@@ -168,19 +171,21 @@ python3 \
         --swarms ${FASTA/.fas/_1.swarms} \
         --fasta ${FASTA}   \
         --newfasta 18S_V4_single_cluster.fas   # 644,562 unique amplicons
+```
 
 Then we extract from the full dataset a number of singletons identical or close to the number of amplicons in the single-cluster (singletons must all have the same length than the single-cluster seed, the goal is to exclude variability due to amplicon length):
 
-
+```{sh}
 SINGLE_CLUSTER="18S_V4_single_cluster.fas"
 INPUT_FASTA="neotropical_soils_18S_V4_175_samples_1_representatives.fas"
 OUTPUT_FASTA="18S_V4_many_cluster.fas"
 SINGLETONS=$(grep "^>" -c "${SINGLE_CLUSTER}")
-LENGTH=$(head -n 2 "${SINGLE_CLUSTER}" | tail -n +2 | awk '{print 
-length($1)}')
+LENGTH=$(head -n 2 "${SINGLE_CLUSTER}" | tail -n +2 | awk '{print length($1)}')
+```
+
 
 After that we do not have  enough singletons of length LENGTH, so we use vsearch to produce reverse-complement sequences to fill in the gap
-
+```{sh}
 (cat "${INPUT_FASTA}"
    vsearch \
          --fastx_revcomp "${INPUT_FASTA}" \
@@ -193,9 +198,11 @@ After that we do not have  enough singletons of length LENGTH, so we use vsearch
         awk -v LENGTH=${LENGTH} 'length($2) == LENGTH' | \
         head -n "${SINGLETONS}" | \
         tr "\t" "\n" >  "${OUTPUT_FASTA}"
+```
 
 By using this code:
 
+```{sh}
 FASTA="18S_V4_many_cluster.fas"
 
 for i in {1..1000} ; do
@@ -203,6 +210,7 @@ for i in {1..1000} ; do
         /usr/bin/time -f "%e\t%M\t%P" \
                              swarm -t 4 -z "${FASTA}" -o /dev/null -l /dev/null 2>&1
 done >  "${FASTA/.fas/_timings.tsv}"
+```
 
 
 We create a "18S_V4_swarm_timings.tsv"-table looking like this:
