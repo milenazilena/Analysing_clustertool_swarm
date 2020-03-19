@@ -1,9 +1,9 @@
 In this folder are notebooks plus the needed files concerning the whole Internship. 
 The notebooks are divided in 4 different projects:
 
-1. A comparison of swarms handling with one big cluster and lots of small clusters,
-2. A comparison of different datasets and their amount of singletons per clustersize,
-3. The effect of swarms --boundary option on computation,
-4. bash tests testing two different swarm options: the --network and -fastidous/--boundary option.
+1. A comparison of swarms handling with one big cluster and lots of small clusters (Many_vs_single_clusters),
+2. A comparison of different datasets and their amount of singletons per clustersize (Clustersize_singletons),
+3. The effect of swarms --boundary option on computation (effect_of_boundary_value),
+4. bash tests testing two different swarm options: the --network and -fastidous/--boundary option (testing_swarm_options).
 
 The notebooks describe the whole way how to get the data, plot and analyse it.
