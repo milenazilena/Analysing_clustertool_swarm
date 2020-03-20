@@ -215,7 +215,7 @@ values <- values[,c(1,8,2,4,3,5,6,7)]
 )
 
 
-Here we compare compuation of V4 and V9 data where the boundary values are equal, to have an equal sample size:
+##Here we compare computation of V4 and V9 data where the boundary values are equal, to have an equal sample size:
 ```{r}
 equal_boundary_values_V9 <- rbind(log_18SV9_mean[which(log_18SV4_mean$boundary_value == log_18SV9_mean$boundary_value), ])
 equal_boundary_values_V4 <- rbind(log_18SV4_mean[which(log_18SV4_mean$boundary_value == log_18SV9_mean$boundary_value), ])
