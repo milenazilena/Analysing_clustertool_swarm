@@ -253,8 +253,8 @@ ggplot(d,
   geom_boxplot() +
   theme_bw(base_size = 16) +
   theme(legend.position = "none") +
-  labs(title = "18S V4", x = "Fasta file", y = "Values") + 
-  scale_x_discrete(labels = c("Many clusters", "Single cluster")) +
+  labs(title = "18S V4 data", x = NULL, y = NULL) + 
+  scale_x_discrete(labels = c("Many \nclusters", "Single \ncluster")) +
   scale_fill_manual(values = c("coral", "coral3")) +
   facet_wrap(~ variables, scales = "free")
 

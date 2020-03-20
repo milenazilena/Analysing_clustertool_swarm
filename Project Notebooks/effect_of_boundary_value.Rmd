@@ -110,11 +110,12 @@ ggplot(data = d, aes(x = boundary_value, y = values, colour = marker, alpha = ma
 ```
 
 On the x-axis we see the boundary value on a log scale. On the y-axis, CPU in percent, the Memory in GB, the number of clusters in thousands and the time in seconds of 18S V4 data (in pink) and 18S V9 data (in blue) is plotted. 18S V4 data is about 30 kb, 18S V9 data 1,419 kb.
-The V4 sequences are 380 nucleotide long on average, and V9 sequences are 130 nucleotide long on average. The V4 dataset was subsampled to the same size (99%) in bytes than the V9 dataset.
+The V4 sequences are 380 nucleotide long on average, and V9 sequences are 130 nucleotide long on average. The V4 dataset was subsampled to the same size (99%) in bytes than the V9 dataset to ensure equal conditions for measuring, because computation would probably be faster on shorter nucleotides.
 
 In general you can see that the lowest time, memory and CPU values and the highest number of cluster value are bound with the lowest boundary value (1 = no fastidious option) in both datasets, whereas only the max memory value is bound to the max boundary value (724731 V4; 15638315 V9) in both datasets. The highest peaks in time and CPU and the lowest number of clusters are not bound with the max boundary value, but rather rise to a certain level and then fall again. 
 Also interesting could be the values where the boundary value (bv) is equal 2: in comparison to bv == 1, bv == 2 needs at least three times longer, the CPU is doubled, there is at least three times more memory needed and the number of clusters are cut down to a half.
 The max time is 154.27 on 3866 boundary value (V4) and 158.39 on 89624 boundary value (V9). The max CPU is 1381% on 1252 boundary value (V4) and 1281% on 13031 boundary value (V9). The min Number of Clusters is 533961 on 3 boundary value (V4) and 906547 on 11 boundary value (V9). 
+V4 and V9 compared, computation on V4 data results in a lower number of clusters, but needs more CPU, more memory and longer time.
 
 
 ```{r}
@@ -161,7 +162,7 @@ values_mean <- as.data.frame(rbind(log_18SV4_mean[which.max(log_18SV4_mean[,2]),
                                    log_18SV9_mean[which.min(log_18SV9_mean[,3]), ],
                                    log_18SV9_mean[which.min(log_18SV9_mean[,4]), ],
                                    log_18SV9_mean[which.min(log_18SV9_mean[,5]), ],
-                                   log_18SV9_mean[which.min(log_18SV9_mean[,1]), ])
+                                   log_18SV9_mean[which.min(log_18SV9_mean[,1]), ]))
 
 values_mean$column <- c("Time_max", "Memory_max", "CPU_max", "Number of Clusters_max", 
                         "Boundary Value_max", "Time_min", "Memory_min", "CPU_min", 
@@ -214,25 +215,46 @@ values <- values[,c(1,8,2,4,3,5,6,7)]
 )
 
 
-
-
-
-
+Here we compare compuation of V4 and V9 data where the boundary values are equal, to have an equal sample size:
+```{r}
+equal_boundary_values_V9 <- rbind(log_18SV9_mean[which(log_18SV4_mean$boundary_value == log_18SV9_mean$boundary_value), ])
+equal_boundary_values_V4 <- rbind(log_18SV4_mean[which(log_18SV4_mean$boundary_value == log_18SV9_mean$boundary_value), ])
+```
 
 ```{r}
-shapiro.test(log_18SV4$`Time (s)`)
-shapiro.test(log_18SV4$boundary_value)
-shapiro.test(log_18SV4$`Memory (GB)`)
-shapiro.test(parse_number(log_18SV4$CPU))
-shapiro.test(log_18SV4$`Number of Clusters (in thousands)`)
+shapiro.test(equal_boundary_values_V9$time)
+shapiro.test(equal_boundary_values_V9$memory)
+shapiro.test(equal_boundary_values_V9$CPU)
+shapiro.test(equal_boundary_values_V9$number_clusters)
 ```
 The Shapiro-Wilk normality test tells us that the variables are not normally distributed.
 This is why we have to use the Mann-Whitney-Wilcoxon Test for independent data that doesn't follow the normal distribution.
 ```{r}
-wilcox.test(log_18SV4$`Time (s)`~ log_18SV9$`Time (s)`)
-wilcox.test(log_18SV4$boundary_value~ log_18SV9$boundary_value)
-wilcox.test(log_18SV4$`Memory (GB)`~ log_18SV9$`Memory (GB)`)
-wilcox.test(parse_number(log_18SV4$CPU)~ parse_number(log_18SV9$CPU))
-wilcox.test(log_18SV4$`Number of Clusters (in thousands)`~ log_18SV9$`Number of Clusters (in thousands)`)
+wilcox.test(equal_boundary_values_V9$time, equal_boundary_values_V4$time)
+wilcox.test(equal_boundary_values_V9$memory, equal_boundary_values_V4$memory)
+wilcox.test(equal_boundary_values_V9$CPU, equal_boundary_values_V4$CPU)
+wilcox.test(equal_boundary_values_V9$number_clusters, equal_boundary_values_V4$number_clusters)
 ```
-Because the shapiro test tells us that our variables are not normally distributed, we normally would compare the values by the Mann-Whitney-Wilcoxon Test now. But we cannot compare them because they have different numbers of observations (18SV4 = 366, 18SV9 = 25371).
+Because the shapiro test tells us that our variables are not normally distributed, we compare the values by the Mann-Whitney-Wilcoxon Test. We compare the same boundary values and the tests tell us that the difference between the datasets concerning time, memory, CPU and Number of Clusters at these boundary values are significant (significance level = 0.05).
+
+## Comparison visualized in box plots
+```{r}
+samples <- c(rep("18S_V4", 16), rep("18S_V9", 16))
+joined_equal_values <- full_join(equal_boundary_values_V4, equal_boundary_values_V9) %>% 
+                       add_column(samples) %>% 
+                       gather("variables", "values", c(time, memory, CPU, number_clusters))
+
+ggplot(joined_equal_values,
+       aes(x = samples,
+           y = values,
+           fill = samples)) +
+  geom_boxplot() +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "none") +
+  labs(title= "Computation of 18S Data in swarm compared", x = NULL, y = NULL) +
+  scale_x_discrete(labels = c("V4", "V9")) +
+  scale_fill_manual(values = c("coral", "coral3")) +
+  facet_wrap(~ variables, scales = "free")
+
+#ggsave("Comparision_equal_boundary_values.pdf", width = 16, height = 9)
+```
