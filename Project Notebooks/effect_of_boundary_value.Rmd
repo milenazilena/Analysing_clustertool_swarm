@@ -127,17 +127,17 @@ log_18SV4 <- read_tsv("neotropical_soils_18S_V4_175_samples_21_percent.log", col
 ```{r}
 colnames <- c("boundary_value", "time", "memory", "CPU", "number_clusters")
 log_18SV9_mean <- as.data.frame(cbind(colMeans(matrix(log_18SV9$boundary_value, nrow=3)),
-                                    colMeans(matrix(log_18SV9$`Time (s)`, nrow=3)),
-                                    colMeans(matrix(log_18SV9$`Memory (GB)`, nrow=3)),
-                                    colMeans(matrix(parse_number(log_18SV9$CPU), nrow=3)),
-                                    colMeans(matrix(log_18SV9$`Number of Clusters (in thousands)`, nrow=3))))
+                                      colMeans(matrix(log_18SV9$`Time (s)`, nrow=3)),
+                                      colMeans(matrix(log_18SV9$`Memory (GB)`, nrow=3)),
+                                      colMeans(matrix(parse_number(log_18SV9$CPU), nrow=3)),
+                                      colMeans(matrix(log_18SV9$`Number of Clusters (in thousands)`, nrow=3))))
 colnames(log_18SV9_mean) <- colnames     
 
 log_18SV4_mean <- as.data.frame(cbind(colMeans(matrix(log_18SV4$boundary_value, nrow=3)),
-                                    colMeans(matrix(log_18SV4$`Time (s)`, nrow=3)),
-                                    colMeans(matrix(log_18SV4$`Memory (GB)`, nrow=3)),
-                                    colMeans(matrix(parse_number(log_18SV4$CPU), nrow=3)),
-                                    colMeans(matrix(log_18SV4$`Number of Clusters (in thousands)`, nrow=3))))
+                                      colMeans(matrix(log_18SV4$`Time (s)`, nrow=3)),
+                                      colMeans(matrix(log_18SV4$`Memory (GB)`, nrow=3)),
+                                      colMeans(matrix(parse_number(log_18SV4$CPU), nrow=3)),
+                                      colMeans(matrix(log_18SV4$`Number of Clusters (in thousands)`, nrow=3))))
 colnames(log_18SV4_mean) <- colnames
 ```
 
